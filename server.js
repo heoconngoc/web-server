@@ -80,7 +80,7 @@ app.get('/api/error', (req, res) => {
 app.use('/', pagesRouter);
 app.use('/api', apiRouter);
 
-// Use for everything else that is not get. So put it below get func
+// Use for everything else that is not get. So put it below get function
 app.use((req, res) => {
   res.status(404).send("Page not found.");
 });
