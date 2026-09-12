@@ -1,14 +1,29 @@
 import express from "express";
 import pagesRouter from './routes/pages.js';
 import apiRouter from './routes/api.js';
+import {join} from 'path';
 
 const app = express();
 const PORT = 3000;
 
+app.set('view engine', 'ejs');
+app.set('views', 'views');
 
+app.get('/', (req, res) => {
+  res.sendFile(join(import.meta.dirname, 'public', 'index.html'));
+});
 
-app.get("/", (req, res) => {
-  res.send("Hello, web!");
+app.use(express.static('public'));
+
+app.get('/entries', (req, res) => {
+  const entries = [
+    { title: 'First note'},
+    { title: 'Second note'},
+    { title: 'Third note'},
+  ];
+  const inner = '<ul>' + entries.map(e => `<li>${e.title}</li>`).join('') + '</ul>';
+  res.render('layout', { title: 'Entries', body: inner, entries});
+  // the render func above do: 1) Find layout.ejs file, find var title, body, entries and subtitute => send html to browser
 });
 
 app.get("/ab", (req, res) => {

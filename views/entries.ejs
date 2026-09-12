@@ -1,0 +1,9 @@
+<ul>
+  <% if (entries.length === 0) { %>
+    <p>No entries yet.</p>
+  <% } else { %>
+    <% entries.forEach(entry => { %>
+      <li><%= entry.title %></li>
+    <% }); %>
+  <% } %>
+</ul>
