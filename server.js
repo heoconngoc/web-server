@@ -9,6 +9,10 @@ const PORT = 3000;
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
+app.get("/about", (req, res) => {
+  res.render("about", { title: "About" });
+});
+
 const events = [
 
 ];
