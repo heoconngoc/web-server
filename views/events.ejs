@@ -1,0 +1,9 @@
+<ul>
+  <% if(events.length !== 0) { %>
+    <% events.forEach(event => { %>
+      <li><%= event.title %></li>
+    <% }); %>
+  <% } else { %>
+    <li>No events found</li>
+  <% } %>
+</ul>

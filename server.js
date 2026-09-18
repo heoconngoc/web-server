@@ -9,6 +9,14 @@ const PORT = 3000;
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
+const events = [
+
+];
+
+app.get('/events', (req, res) => {
+  res.render('events', { events });
+});
+
 app.get('/', (req, res) => {
   res.sendFile(join(import.meta.dirname, 'public', 'index.html'));
 });
