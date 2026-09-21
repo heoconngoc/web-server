@@ -27,15 +27,36 @@ app.get('/', (req, res) => {
 
 app.use(express.static('public'));
 
+app.use(express.json());
+
+const entries = [
+  { title: 'First note', body: 'Notes from the first session.' },
+  { title: 'Second note', body: 'Notes from the second session.' },
+  { title: 'Third note', body: 'Notes from the third session.' },
+];
+
 app.get('/entries', (req, res) => {
-  const entries = [
-    { title: 'First note'},
-    { title: 'Second note'},
-    { title: 'Third note'},
-  ];
-  const inner = '<ul>' + entries.map(e => `<li>${e.title}</li>`).join('') + '</ul>';
-  res.render('layout', { title: 'Entries', body: inner, entries});
-  // the render func above do: 1) Find layout.ejs file, find var title, body, entries and subtitute => send html to browser
+  const accept = req.get('Accept');
+  console.log(accept);
+  res.set('Cache_Control', 'public, max_age=60');
+  res.set('X_Total_Count', entries.length);
+  res.status(200).render('entries', {title: 'My Notes', entries});
+});
+app.post('/entries', (req, res) => {
+  const { title, body } = req.body;
+  const newEntry = { title, body };
+  entries.push(newEntry);
+  res.status(201).json(newEntry);
+});
+
+app.delete('/entries/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  if(Number.isNaN(id) || id < 0 || id >= entries.length) {
+    res.status(404).json({error: 'Entry not found'});
+    return;
+  }
+  entries.splice(id, 1);
+  res.status(204).send();
 });
 
 app.get("/ab", (req, res) => {
