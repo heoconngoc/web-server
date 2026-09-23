@@ -29,6 +29,19 @@ app.use(express.static('public'));
 
 app.use(express.json());
 
+const notes = [];
+
+app.post('/notes', (req, res) => {
+  const {title, content} = req.body;
+  if(title.length == 0 || content.length == 0) {
+    res.status(400).json("Title or Content is invalid");
+    return;
+  }
+  const newNotes = {title, content};
+  notes.push(newNotes);
+  res.status(201).json(newNotes);
+});
+
 const entries = [
   { title: 'First note', body: 'Notes from the first session.' },
   { title: 'Second note', body: 'Notes from the second session.' },
@@ -50,7 +63,7 @@ app.post('/entries', (req, res) => {
 });
 
 app.delete('/entries/:id', (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number.parseInt(req.params.id);
   if(Number.isNaN(id) || id < 0 || id >= entries.length) {
     res.status(404).json({error: 'Entry not found'});
     return;
