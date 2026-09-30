@@ -1,152 +1,77 @@
-import express from "express";
-import pagesRouter from './routes/pages.js';
-import apiRouter from './routes/api.js';
-import {join} from 'path';
+import express from 'express';
+import { readFile, writeFile } from 'fs/promises';
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+const DATA_FILE = 'entries.json';
 
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
-app.get("/about", (req, res) => {
-  res.render("about", { title: "About" });
-});
-
-const events = [
-
-];
-
-app.get('/events', (req, res) => {
-  res.render('events', { events });
-});
-
-app.get('/', (req, res) => {
-  res.sendFile(join(import.meta.dirname, 'public', 'index.html'));
-});
-
 app.use(express.static('public'));
-
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-const notes = [];
+app.get('/entries', async (req, res) => {
+  const data = await readFile(DATA_FILE, 'utf-8');
+  const entries = JSON.parse(data);
+  res.set('X-Total-Count', entries.length);
+  res.status(200).render('entries', { title: 'My Notes', entries });
+});
 
-app.post('/notes', (req, res) => {
-  const {title, content} = req.body;
-  if(title.length == 0 || content.length == 0) {
-    res.status(400).json("Title or Content is invalid");
+app.post('/entries', async (req, res) => {
+  const { title, body } = req.body;
+  if (!title || !body) {
+    res.status(400).json({ error: 'title and body are required' });
     return;
   }
-  const newNotes = {title, content};
-  notes.push(newNotes);
-  res.status(201).json(newNotes);
-});
 
-const entries = [
-  { title: 'First note', body: 'Notes from the first session.' },
-  { title: 'Second note', body: 'Notes from the second session.' },
-  { title: 'Third note', body: 'Notes from the third session.' },
-];
-
-app.get('/entries', (req, res) => {
-  const accept = req.get('Accept');
-  console.log(accept);
-  res.set('Cache_Control', 'public, max_age=60');
-  res.set('X_Total_Count', entries.length);
-  res.status(200).render('entries', {title: 'My Notes', entries});
-});
-app.post('/entries', (req, res) => {
-  const { title, body } = req.body;
+  const data = await readFile(DATA_FILE, 'utf-8');
+  const entries = JSON.parse(data);
   const newEntry = { title, body };
   entries.push(newEntry);
+  await writeFile(DATA_FILE, JSON.stringify(entries, null, 2));
+
   res.status(201).json(newEntry);
 });
 
-app.delete('/entries/:id', (req, res) => {
-  const id = Number.parseInt(req.params.id);
-  if(Number.isNaN(id) || id < 0 || id >= entries.length) {
-    res.status(404).json({error: 'Entry not found'});
+app.post('/entries/classic', async (req, res) => {
+  const { title, body } = req.body;
+  if (!title || !body) {
+    res.status(400).send('title and body are required');
+    return;
+  }
+
+  const data = await readFile(DATA_FILE, 'utf-8');
+  const entries = JSON.parse(data);
+  entries.push({ title, body });
+  await writeFile(DATA_FILE, JSON.stringify(entries, null, 2));
+
+  // the pattern is called: Post/Redirect/Get
+  // this route sends the browser a 302 response pointing back
+  //  at GET /entries
+  res.redirect('/entries');
+});
+
+app.delete('/entries/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+
+  const data = await readFile(DATA_FILE, 'utf-8');
+  const entries = JSON.parse(data);
+  if (Number.isNaN(id) || id < 0 || id >= entries.length) {
+    res.status(404).json({ error: 'Entry not found' });
     return;
   }
   entries.splice(id, 1);
+  await writeFile(DATA_FILE, JSON.stringify(entries, null, 2));
+
   res.status(204).send();
 });
 
-app.get("/ab", (req, res) => {
-  res.send("This is a web programming course.");
-});
-
-app.get("/status", (req, res) => {
-  res.json({
-    status: "ok",
-    uptime: process.uptime(),
-  });
-});
-
-const greetHandler = (req, res) => {
-  res.send('Hello!');
-};
-
-app.get('/greet', greetHandler);
-
-app.get('/hello/:name', (req, res) => {
-  const name = req.params.name;
-  res.send(`Hello, ${name}!`);
-});
-
-app.get('/users/:userId/posts/:postId', (req, res) => {
-  const { userId,  postId } = req.params;
-  res.send(`User ${userId}, post ${postId}`);
-})
-
-app.get('/search', (req, res) => {
-  const term = req.query.term || 'nothing';
-  const limit = req.query.limit || 5;
-  res.send(`Searching for ${term}, showing ${limit} results.`)
-});
-
-app.get('/api/user/:id', (req, res) => {
-  if(req.params.id === '1'){
-    res.status(404).send('User not found.');
-    return;
-  }
-  res.json({id: '121', name: 'Alice'});
-});
-
-app.get('/hello/:name', (req, res) => {
-  const name = req.params.name;
-  res.send(`Hello, ${name}!`);
-});
-
-app.get('/repeat/:word', (req, res) => {
-  const word = req.params.word;
-  res.send(`${word} ${word} ${word}`);
-});
-
-app.get('/count', (req, res) => {
-  const from = req.query.from || 1;
-  const to = req.query.to || 10;
-  res.send(`Counting from ${from} to ${to}.`);
-});
-
-
-app.get('/api/info', (req, res) => {
-  res.json({name: "Dat", birthday:"13/11/2006"});
-});
-
-app.get('/api/error', (req, res) => {
-  res.status(400).send("Bad request.");
-});
-
-app.use('/', pagesRouter);
-app.use('/api', apiRouter);
-
-// Use for everything else that is not get. So put it below get function
 app.use((req, res) => {
-  res.status(404).send("Page not found.");
+  res.status(404).send('Page not found.');
 });
 
-// Always happen at the end
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
