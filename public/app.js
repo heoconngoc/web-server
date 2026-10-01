@@ -39,22 +39,28 @@ form.addEventListener('submit', async (event) => {
   const data = new FormData(form);
   const entry = Object.fromEntries(data);
 
-  const response = await fetch('/entries', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(entry),
-  });
+  try {
+    const response = await fetch('/entries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry),
+    });
 
-  if (!response.ok) {
-    const { error } = await response.json();
-    alert(error);
-    return;
+    if (!response.ok) {
+      const { error } = await response.json();
+      alert(error);
+      return;
+    }
+
+    const saved = await response.json();
+    list.append(buildItem(saved));
+
+    form.reset();
+
+  } catch (e) {
+    console.log("Cannot connect to server");
+    alert("Cannot connect to server");
   }
-
-  const saved = await response.json();
-  list.append(buildItem(saved));
-
-  form.reset();
 });
 
 list.addEventListener('click', async (event) => {
