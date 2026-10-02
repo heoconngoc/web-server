@@ -68,6 +68,10 @@ app.delete('/entries/:id', async (req, res) => {
   res.status(204).send();
 });
 
+app.get("/about", (req, res) => {
+  res.render("about", { title: "About" });
+});
+
 app.use((req, res) => {
   res.status(404).send('Page not found.');
 });
