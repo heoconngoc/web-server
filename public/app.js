@@ -1,24 +1,35 @@
 const form = document.querySelector('#entry-form');
 const list = document.querySelector('#entries');
 
+// Fill an entry's display: a bold title, then the body. textContent, never
+// innerHTML: titles and bodies are user input, and innerHTML would run them as
+// markup if someone typed a <script> or <img> tag.
+const fillDisplay = (display, entry) => {
+  const title = document.createElement('strong');
+  title.textContent = `${entry.title}:`;
+  display.replaceChildren(title, ` ${entry.body}`);
+};
+
+const makeButton = (className, label) => {
+  const button = document.createElement('button');
+  button.className = className;
+  button.type = 'button';
+  button.textContent = label;
+  return button;
+};
+
 // Build an entry's <li> the same way the server-rendered page does.
-// textContent, never innerHTML: a title typed into the form is text, and
-// innerHTML would run it as markup if someone typed a <script> or <img> tag.
 const buildItem = (entry) => {
   const item = document.createElement('li');
   item.dataset.id = list.children.length;
+  item.dataset.title = entry.title;
+  item.dataset.body = entry.body;
 
-  const text = document.createElement('span');
-  const title = document.createElement('strong');
-  title.textContent = `${entry.title}:`;
-  text.append(title, ` ${entry.body}`);
+  const display = document.createElement('span');
+  display.className = 'entry-display';
+  fillDisplay(display, entry);
 
-  const button = document.createElement('button');
-  button.className = 'delete-btn';
-  button.type = 'button';
-  button.textContent = 'Delete';
-
-  item.append(text, button);
+  item.append(display, makeButton('edit-btn', 'Edit'), makeButton('delete-btn', 'Delete'));
   return item;
 };
 
@@ -28,6 +39,16 @@ const renumber = () => {
   [...list.children].forEach((item, index) => {
     item.dataset.id = index;
   });
+};
+
+// Setting .value, not a value="..." attribute in a string, so a quote in the
+// title cannot end the attribute early.
+const makeInput = (name, value) => {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.name = name;
+  input.value = value;
+  return input;
 };
 
 form.addEventListener('submit', async (event) => {
@@ -65,7 +86,72 @@ form.addEventListener('submit', async (event) => {
   }
 });
 
+const startEdit = (item) => {
+  const display = item.querySelector('.entry-display');
+  const buttons = item.querySelectorAll('.edit-btn, .delete-btn');
+
+  const editForm = document.createElement('form');
+  editForm.className = 'edit-form';
+  const save = document.createElement('button');
+  save.type = 'submit';
+  save.textContent = 'Save';
+  editForm.append(
+    makeInput('title', item.dataset.title),
+    makeInput('body', item.dataset.body),
+    save,
+    makeButton('cancel-btn', 'Cancel'),
+  );
+
+  display.replaceWith(editForm);
+  buttons.forEach((button) => { button.hidden = true; });
+
+  editForm.querySelector('.cancel-btn').addEventListener('click', () => {
+    editForm.replaceWith(display);
+    buttons.forEach((button) => { button.hidden = false; });
+  });
+
+  editForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const data = new FormData(editForm);
+    const entry = Object.fromEntries(data);
+
+    // A failed save leaves the form open with the edits still in it.
+    save.disabled = true;
+    try {
+      const response = await fetch(`/entries/${item.dataset.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry),
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (!response.ok) {
+        const { error } = await response.json();
+        alert(error);
+        return;
+      }
+
+      const saved = await response.json();
+      item.dataset.title = saved.title;
+      item.dataset.body = saved.body;
+      fillDisplay(display, saved);
+      editForm.replaceWith(display);
+      buttons.forEach((button) => { button.hidden = false; });
+    } catch {
+      alert('Your changes were not saved: the server did not answer properly. Please try again.');
+    } finally {
+      save.disabled = false;
+    }
+  });
+};
+
 list.addEventListener('click', async (event) => {
+  if (event.target.matches('.edit-btn')) {
+    startEdit(event.target.closest('li'));
+    return;
+  }
+
   if (!event.target.matches('.delete-btn')) return;
 
   const button = event.target;
