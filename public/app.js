@@ -30,20 +30,21 @@ const renumber = () => {
   });
 };
 
-// AJAX: asynchronous requests from a script
-// JavaScript send the request → wait for response → update DOM
-// → no reload page.
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
 
   const data = new FormData(form);
   const entry = Object.fromEntries(data);
+  const button = form.querySelector('button');
 
+  // One save at a time: a second click while this one is out does nothing.
+  button.disabled = true;
   try {
     const response = await fetch('/entries', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(entry),
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!response.ok) {
@@ -54,12 +55,13 @@ form.addEventListener('submit', async (event) => {
 
     const saved = await response.json();
     list.append(buildItem(saved));
-
     form.reset();
-
-  } catch (e) {
-    console.log("Cannot connect to server");
-    alert("Cannot connect to server");
+  } catch {
+    // No answer, no connection, or an error page that is not JSON. What
+    // they typed is still in the form, so they can simply try again.
+    alert('Your entry was not saved: the server did not answer properly. Please try again.');
+  } finally {
+    button.disabled = false;
   }
 });
 
@@ -72,7 +74,7 @@ list.addEventListener('click', async (event) => {
 
   button.disabled = true;
   try {
-    const response = await fetch(`/entries/${id}`, { method: 'DELETE' });
+    const response = await fetch(`/entries/${id}`, { method: 'DELETE', signal: AbortSignal.timeout(5000) });
     if (!response.ok) {
       const { error } = await response.json();
       alert(error);
@@ -82,6 +84,7 @@ list.addEventListener('click', async (event) => {
     item.remove();
     renumber();
   } catch {
+    alert('That entry was not deleted: the server did not answer properly. Please try again.');
     button.disabled = false;
   }
 });
