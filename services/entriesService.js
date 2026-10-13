@@ -1,5 +1,5 @@
-import { Ok, Err, Some, None } from '../result.js';
-import { getAll, save } from '../repositories/entriesRepository.js';
+import { Ok, Err } from '../result.js';
+import { getAll, findById, create, updateById, removeById } from '../repositories/entriesRepository.js';
 import { toEntryDto } from '../dtos/entryDto.js';
 
 const validateEntry = ({ title, body }) => {
@@ -7,45 +7,26 @@ const validateEntry = ({ title, body }) => {
   return Ok({ title, body });
 };
 
-const findEntryById = (entries, id) => {
-  const entry = entries[id];
-  return entry ? Some(entry) : None;
-};
-
-export const listEntries = async () => {
-  const entries = await getAll();
-  return entries.map(toEntryDto);
-};
+export const listEntries = async () => (await getAll()).map(toEntryDto);
 
 export const createEntry = async (data) => {
   const result = validateEntry(data);
   if (!result.ok) return result;
-
-  const entries = await getAll();
-  entries.push(result.value);
-  await save(entries);
-  return Ok(toEntryDto(result.value));
+  return Ok(toEntryDto(await create(result.value)));
 };
 
 export const updateEntry = async (id, data) => {
-  const entries = await getAll();
-  const found = findEntryById(entries, id);
-  if (!found.some) return Err({ status: 404, message: 'Entry not found' });
+  const existing = await findById(id);
+  if (!existing) return Err({ status: 404, message: 'Entry not found' });
 
   const result = validateEntry(data);
   if (!result.ok) return result;
-
-  entries[id] = result.value;
-  await save(entries);
-  return Ok(toEntryDto(result.value));
+  return Ok(toEntryDto(await updateById(id, result.value)));
 };
 
 export const deleteEntry = async (id) => {
-  const entries = await getAll();
-  const found = findEntryById(entries, id);
-  if (!found.some) return Err({ status: 404, message: 'Entry not found' });
-
-  entries.splice(id, 1);
-  await save(entries);
+  const existing = await findById(id);
+  if (!existing) return Err({ status: 404, message: 'Entry not found' });
+  await removeById(id);
   return Ok(null);
 };

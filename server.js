@@ -3,6 +3,11 @@ import { readFile, writeFile } from 'fs/promises';
 import entriesRouter from './routes/entries.js';
 import aboutRouter from './routes/about.js';
 import morgan from 'morgan';
+import mongoose from 'mongoose';
+
+await mongoose.connect(
+  process.env.MONGODB_URI || 'mongodb://dev:devpassword@mongo:27017/devdb?authSource=admin'
+);
 
 const app = express();
 const PORT = process.env.PORT || 3000;

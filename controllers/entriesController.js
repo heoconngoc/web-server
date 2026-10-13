@@ -1,4 +1,5 @@
 import * as entriesService from '../services/entriesService.js';
+import { isValidId } from '../repositories/entriesRepository.js';
 
 export const index = async (req, res) => {
   const entries = await entriesService.listEntries();
@@ -25,7 +26,11 @@ export const createClassic = async (req, res) => {
 };
 
 export const update = async (req, res) => {
-  const id = parseInt(req.params.id);
+  const { id } = req.params;
+  if (!isValidId(id)) {
+    res.status(400).json({ error: 'id must be a valid id' });
+    return;
+  }
   if (Number.isNaN(id)) {
     res.status(400).json({ error: 'id must be a number' });
     return;
@@ -39,7 +44,11 @@ export const update = async (req, res) => {
 };
 
 export const destroy = async (req, res) => {
-  const id = parseInt(req.params.id);
+  const { id } = req.params;
+  if (!isValidId(id)) {
+    res.status(400).json({ error: 'id must be a valid id' });
+    return;
+  }
   if (Number.isNaN(id)) {
     res.status(400).json({ error: 'id must be a number' });
     return;

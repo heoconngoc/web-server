@@ -1,11 +1,26 @@
-import { readFile, writeFile } from 'fs/promises';
-const DATA_FILE = 'entries.json';
+import mongoose from 'mongoose';
 
-export const getAll = async () => {
-  const data = await readFile(DATA_FILE, 'utf-8');
-  return JSON.parse(data);
-};
+const entrySchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    body: { type: String, required: true },
+  },
+  { timestamps: true }
+);
 
-export const save = async (entries) => {
-  await writeFile(DATA_FILE, JSON.stringify(entries, null, 2));
+const Entry = mongoose.model('Entry', entrySchema);
+
+export const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+export const getAll = async () => Entry.find().lean();
+
+export const findById = async (id) => Entry.findById(id).lean();
+
+export const create = async (data) => (await Entry.create(data)).toObject();
+
+export const updateById = async (id, data) =>
+  Entry.findByIdAndUpdate(id, data, { new: true }).lean();
+
+export const removeById = async (id) => {
+  await Entry.findByIdAndDelete(id);
 };
