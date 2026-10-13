@@ -1,6 +1,37 @@
 const form = document.querySelector('#entry-form');
 const list = document.querySelector('#entries');
 
+// Every request gives up after five seconds instead of waiting forever.
+const timedFetch = (url, options = {}) =>
+  fetch(url, { ...options, signal: AbortSignal.timeout(5000) });
+
+// Send a request and return the JSON the server answered with. Anything
+// that goes wrong (no answer within five seconds, no connection, an error
+// status, a body that is not JSON) throws one Error whose message can go
+// straight to the person using the page.
+const fetchJSON = async (url, options) => {
+  let response;
+  try {
+    response = await timedFetch(url, options);
+  } catch (error) {
+    throw new Error(error.name === 'TimeoutError'
+      ? 'The server did not answer within five seconds.'
+      : 'Could not reach the server.');
+  }
+
+  let body = {};
+  try {
+    body = await response.json();
+  } catch {
+    // An empty body, or an error page in HTML: the status still says enough.
+  }
+
+  if (!response.ok) {
+    throw new Error(body.error || `The server answered ${response.status}.`);
+  }
+  return body;
+};
+
 // Fill an entry's display: a bold title, then the body. textContent, never
 // innerHTML: titles and bodies are user input, and innerHTML would run them as
 // markup if someone typed a <script> or <img> tag.
@@ -61,26 +92,15 @@ form.addEventListener('submit', async (event) => {
   // One save at a time: a second click while this one is out does nothing.
   button.disabled = true;
   try {
-    const response = await fetch('/entries', {
+    const saved = await fetchJSON('/entries', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(entry),
-      signal: AbortSignal.timeout(5000),
     });
-
-    if (!response.ok) {
-      const { error } = await response.json();
-      alert(error);
-      return;
-    }
-
-    const saved = await response.json();
     list.append(buildItem(saved));
     form.reset();
-  } catch {
-    // No answer, no connection, or an error page that is not JSON. What
-    // they typed is still in the form, so they can simply try again.
-    alert('Your entry was not saved: the server did not answer properly. Please try again.');
+  } catch (error) {
+    alert(`Your entry was not saved. ${error.message}`);
   } finally {
     button.disabled = false;
   }
@@ -119,27 +139,18 @@ const startEdit = (item) => {
     // A failed save leaves the form open with the edits still in it.
     save.disabled = true;
     try {
-      const response = await fetch(`/entries/${item.dataset.id}`, {
+      const saved = await fetchJSON(`/entries/${item.dataset.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry),
-        signal: AbortSignal.timeout(5000),
       });
-
-      if (!response.ok) {
-        const { error } = await response.json();
-        alert(error);
-        return;
-      }
-
-      const saved = await response.json();
       item.dataset.title = saved.title;
       item.dataset.body = saved.body;
       fillDisplay(display, saved);
       editForm.replaceWith(display);
       buttons.forEach((button) => { button.hidden = false; });
-    } catch {
-      alert('Your changes were not saved: the server did not answer properly. Please try again.');
+    } catch (error) {
+      alert(`Your changes were not saved. ${error.message}`);
     } finally {
       save.disabled = false;
     }
@@ -160,17 +171,11 @@ list.addEventListener('click', async (event) => {
 
   button.disabled = true;
   try {
-    const response = await fetch(`/entries/${id}`, { method: 'DELETE', signal: AbortSignal.timeout(5000) });
-    if (!response.ok) {
-      const { error } = await response.json();
-      alert(error);
-      button.disabled = false;
-      return;
-    }
+    await fetchJSON(`/entries/${id}`, { method: 'DELETE' });
     item.remove();
     renumber();
-  } catch {
-    alert('That entry was not deleted: the server did not answer properly. Please try again.');
+  } catch (error) {
+    alert(`That entry was not deleted. ${error.message}`);
     button.disabled = false;
   }
 });
