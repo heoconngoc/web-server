@@ -9,6 +9,12 @@ export const index = async (req, res) => {
 
 export const create = async (req, res) => {
   const result = await entriesService.createEntry(req.body);
+  const checkTitle = entriesService.lengthLimit(req.body);
+
+  if(!checkTitle.ok) {
+    checkTitle.status(checkTitle.error.status).json({ error: checkTitle.error.message });
+  }
+
   if (!result.ok) {
     res.status(result.error.status).json({ error: result.error.message });
     return;
@@ -18,6 +24,12 @@ export const create = async (req, res) => {
 
 export const createClassic = async (req, res) => {
   const result = await entriesService.createEntry(req.body);
+  const checkTitle = entriesService.lengthLimit(req.body);
+
+  if(!checkTitle.ok) {
+    checkTitle.status(checkTitle.error.status).json({ error: checkTitle.error.message });
+  }
+
   if (!result.ok) {
     res.status(result.error.status).send(result.error.message);
     return;

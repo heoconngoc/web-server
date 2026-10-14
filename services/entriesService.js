@@ -30,3 +30,8 @@ export const deleteEntry = async (id) => {
   await removeById(id);
   return Ok(null);
 };
+
+export const lengthLimit = (data) => {
+  if(len(data.title) > 60) return Err({ status: 400, message: 'A title may be at most 60 characters' });
+  return Ok(null);
+}
