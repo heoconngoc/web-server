@@ -1,9 +1,6 @@
 const form = document.querySelector('#entry-form');
 const list = document.querySelector('#entries');
 
-// htmx waits forever by default. Give its requests the same five seconds.
-htmx.config.timeout = 5000;
-
 // Every request gives up after five seconds instead of waiting forever.
 const timedFetch = (url, options = {}) =>
   fetch(url, { ...options, signal: AbortSignal.timeout(5000) });
@@ -35,6 +32,9 @@ const fetchJSON = async (url, options) => {
   return body;
 };
 
+// htmx waits forever by default. Give its requests the same five seconds.
+htmx.config.timeout = 5000;
+
 // Fill an entry's display: a bold title, then the body. textContent, never
 // innerHTML: titles and bodies are user input, and innerHTML would run them as
 // markup if someone typed a <script> or <img> tag.
@@ -44,11 +44,14 @@ const fillDisplay = (display, entry) => {
   display.replaceChildren(title, ` ${entry.body}`);
 };
 
-const makeButton = (className, label) => {
+const makeButton = (className, label, attributes = {}) => {
   const button = document.createElement('button');
   button.className = className;
   button.type = 'button';
   button.textContent = label;
+  Object.entries(attributes).forEach(([name, value]) => {
+    button.setAttribute(name, value);
+  });
   return button;
 };
 
@@ -58,12 +61,21 @@ const buildItem = (entry) => {
   item.dataset.id = entry.id;
   item.dataset.title = entry.title;
   item.dataset.body = entry.body;
+  item.dataset.favorite = entry.favorite;
 
   const display = document.createElement('span');
   display.className = 'entry-display';
   fillDisplay(display, entry);
 
-  item.append(display, makeButton('edit-btn', 'Edit'), makeButton('delete-btn', 'Delete'));
+  const favoriteButton = makeButton('favorite-btn', entry.favorite ? '★' : '☆');
+  const deleteButton = makeButton('delete-btn', 'Delete', {
+    'hx-delete': `/entries/${entry.id}`,
+    'hx-target': 'closest li',
+    'hx-swap': 'outerHTML',
+    'hx-confirm': 'Delete this entry?',
+    'hx-disabled-elt': 'this',
+  });
+  item.append(display, favoriteButton, makeButton('edit-btn', 'Edit'), deleteButton);
   return item;
 };
 
@@ -158,6 +170,22 @@ list.addEventListener('click', async (event) => {
   if (event.target.matches('.edit-btn')) {
     startEdit(event.target.closest('li'));
     return;
+  }
+
+  if (!event.target.matches('.favorite-btn')) return;
+
+  const button = event.target;
+  const item = button.closest('li');
+
+  button.disabled = true;
+  try {
+    const saved = await fetchJSON(`/entries/${item.dataset.id}/favorite`, { method: 'PATCH' });
+    item.dataset.favorite = saved.favorite;
+    button.textContent = saved.favorite ? '★' : '☆';
+  } catch (error) {
+    alert(`The favorite was not changed. ${error.message}`);
+  } finally {
+    button.disabled = false;
   }
 });
 

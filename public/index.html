@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8">
@@ -6,19 +6,15 @@
     <link rel="stylesheet" href="/style.css">
   </head>
   <body>
-    <header>
-      <h1>My Notes</h1>
-      <nav>
-        <a href="/">Home</a>
-        <a href="/entries">Entries</a>
-        <a href="/about">About</a>
+    <header class="flex flex-col gap-2 border-b-2 border-gray-300 pb-2 mb-4 sm:flex-row sm:justify-between sm:items-center">
+      <h1 class="text-xl font-bold">Notes</h1>
+      <nav class="flex gap-4">
+        <a href="/" class="text-teal-700">Home</a>
+        <a href="/entries" class="text-teal-700">Entries</a>
       </nav>
     </header>
     <main>
-      <article>
-        <h2>Getting started</h2>
-        <p>This is the first note.</p>
-      </article>
+      <p>Welcome to the notes server.</p>
     </main>
     <footer>
       <p>COMPSCI 326</p>

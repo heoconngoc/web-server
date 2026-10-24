@@ -3,11 +3,20 @@ import { getAll, findById, create, updateById, removeById } from '../repositorie
 import { toEntryDto } from '../dtos/entryDto.js';
 
 const validateEntry = ({ title, body }) => {
-  if (!title || !body) return Err({ status: 400, message: 'title and body are required' });
-  return Ok({ title, body });
+  const trimmedTitle = (title || '').trim();
+  const trimmedBody = (body || '').trim();
+  if (!trimmedTitle || !trimmedBody) return Err({ status: 400, message: 'title and body are required' });
+  return Ok({ title: trimmedTitle, body: trimmedBody });
 };
 
-export const listEntries = async () => (await getAll()).map(toEntryDto);
+export const listEntries = async () =>
+  (await getAll()).map(toEntryDto).sort((a, b) => a.title.localeCompare(b.title));
+
+export const getEntry = async (id) => {
+  const existing = await findById(id);
+  if (!existing) return Err({ status: 404, message: 'Entry not found' });
+  return Ok(toEntryDto(existing));
+};
 
 export const createEntry = async (data) => {
   const result = validateEntry(data);
@@ -31,7 +40,8 @@ export const deleteEntry = async (id) => {
   return Ok(null);
 };
 
-export const lengthLimit = (data) => {
-  if(len(data.title) > 60) return Err({ status: 400, message: 'A title may be at most 60 characters' });
-  return Ok(null);
-}
+export const toggleFavorite = async (id) => {
+  const existing = await findById(id);
+  if (!existing) return Err({ status: 404, message: 'Entry not found' });
+  return Ok(toEntryDto(await updateById(id, { favorite: !existing.favorite })));
+};
