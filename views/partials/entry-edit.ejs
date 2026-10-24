@@ -1,16 +1,18 @@
 <li id="entry-<%= entry.id %>">
   <form
-    class="edit-form"
+    class="edit-form flex flex-col gap-2 flex-1 sm:flex-row"
     hx-put="/entries/<%= entry.id %>"
     hx-target="closest li"
     hx-swap="outerHTML"
     hx-disabled-elt="find button[type='submit']"
   >
-    <input type="text" name="title" value="<%= entry.title %>">
-    <input type="text" name="body" value="<%= entry.body %>">
-    <button type="submit">Save</button>
+    <label for="edit-title-<%= entry.id %>" class="sr-only">Title</label>
+    <input type="text" id="edit-title-<%= entry.id %>" name="title" value="<%= entry.title %>" class="form-input">
+    <label for="edit-body-<%= entry.id %>" class="sr-only">Body</label>
+    <input type="text" id="edit-body-<%= entry.id %>" name="body" value="<%= entry.body %>" class="form-input">
+    <button type="submit" class="bg-teal-700 text-white rounded px-3 py-1.5">Save</button>
     <button
-      class="cancel-btn"
+      class="cancel-btn bg-gray-500 text-white rounded px-3 py-1.5"
       type="button"
       hx-get="/entries/<%= entry.id %>"
       hx-target="closest li"

@@ -92,5 +92,9 @@ export const destroy = async (req, res) => {
   if (!isValidId(id)) return badId(req, res);
   const result = await entriesService.deleteEntry(id);
   if (!result.ok) return sendError(req, res, result.error);
+  if (fromHtmx(req)) {
+    res.status(200).render('partials/entry-deleted');
+    return;
+  }
   res.status(200).send('');
 };

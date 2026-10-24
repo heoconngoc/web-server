@@ -7,7 +7,10 @@
   hx-disabled-elt="find button"
   <% if (locals.oob) { %>hx-swap-oob="true"<% } %>
 >
-  <input type="text" name="title" placeholder="Title" class="form-input">
-  <input type="text" name="body" placeholder="Body" class="form-input">
-  <button type="submit" class="bg-teal-700 text-white rounded px-4 py-2">Add entry</button>
+  <label for="entry-title" class="sr-only">Title</label>
+  <input type="text" id="entry-title" name="title" placeholder="Title"
+         title="Shortcut: Alt+Shift+N" class="form-input">
+  <label for="entry-body" class="sr-only">Body</label>
+  <input type="text" id="entry-body" name="body" placeholder="Body" class="form-input">
+  <button type="submit" id="entry-add" class="bg-teal-700 text-white rounded px-4 py-2 hover:bg-teal-800">Add entry</button>
 </form>
