@@ -3,3 +3,8 @@ export const toEntryDto = (entry) => ({
   title: entry.title,
   body: entry.body,
 });
+
+export const toUserDto = (user) => ({
+  id: user._id.toString(),
+  email: user.email,
+});
