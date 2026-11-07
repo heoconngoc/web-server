@@ -10,6 +10,7 @@
     hx-swap="outerHTML"
     hx-disabled-elt="this"
   ><%= entry.favorite ? '★' : '☆' %></button>
+  <% if (entry.canChange) { %>
   <button
     class="edit-btn hover:bg-teal-50"
     type="button"
@@ -18,7 +19,7 @@
     hx-swap="outerHTML"
   >Edit</button>
   <button
-    class="delete-btn hover:bg-red-50"
+    class="delete-btn hover:bg-red-100 hover:text-red-800"
     hx-delete="/entries/<%= entry.id %>"
     hx-target="closest li"
     hx-swap="outerHTML"
@@ -27,4 +28,5 @@
     hx-indicator="next .delete-indicator"
   >Delete</button>
   <span class="delete-indicator htmx-indicator text-sm text-gray-500">Deleting...</span>
+  <% } %>
 </li>

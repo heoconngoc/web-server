@@ -6,9 +6,6 @@ import entriesRouter from './routes/entries.js';
 import authRouter from './routes/auth.js';
 import { attachUser } from './middleware/attachUser.js';
 
-import session from 'express-session';
-import MongoStore from 'connect-mongo';
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-change-in-production';
@@ -35,15 +32,6 @@ app.use(attachUser);
 
 app.use(authRouter);
 app.use('/entries', entriesRouter);
-
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI || 'mongodb://dev:devpassword@mongo:27017/devdb?authSource=admin',
-  }),
-}));
 
 app.use((req, res) => {
   res.status(404).send('Page not found.');

@@ -39,6 +39,7 @@ document.addEventListener('htmx:afterRequest', (event) => {
 document.addEventListener('keydown', (event) => {
   if (event.altKey && event.shiftKey && event.code === 'KeyN') {
     event.preventDefault();
-    document.querySelector('#entry-title').focus();
+    // Logged out there is no add form, so no title field to jump to.
+    document.querySelector('#entry-title')?.focus();
   }
 });
